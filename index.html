@@ -83,8 +83,6 @@
 
 <img src="img/header.png" alt="Header" id="headerImg" />
 
-
-
 <form id="presupuestoForm">
   <label>Cliente:
     <input type="text" id="cliente" required />
@@ -189,7 +187,7 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const pageWidth = 190;
+    const pageWidth = 200; // tabla más ancha
 
     // Cargar imágenes header y footer
     const headerImg = new Image();
@@ -199,7 +197,7 @@
       headerImg.onerror = res;
     });
     const headerHeight = (headerImg.height * pageWidth) / headerImg.width;
-    doc.addImage(headerImg, 'PNG', 10, 5, pageWidth, headerHeight);
+    doc.addImage(headerImg, 'PNG', 5, 5, pageWidth, headerHeight);
 
     const cliente = document.getElementById('cliente').value;
     const telefono = document.getElementById('telefono').value;
@@ -233,24 +231,24 @@
       head: [['Cant.', 'Trabajo a realizar', 'Precio unitario', 'Total']],
       body: rows,
       styles: { fontSize: 12 },
-       headStyles: {
-        fillColor: [0, 51, 102], // Azul oscuro en formato RGB
-        textColor: 255,          // Blanco
+      headStyles: {
+        fillColor: [0, 51, 102],
+        textColor: 255,
         halign: 'center'
       },
       foot: [['', '', 'Total Final:', totalFinal]],
-      footStyles: { fillColor: [255, 204, 128], fontStyle: 'bold' },
+      footStyles: { fillColor: [102, 204, 255], fontStyle: 'bold' }, // celeste vistoso
       theme: 'grid',
-      margin: { left: 10, right: 10 },
+      margin: { left: 5, right: 5 }, // margen reducido
       columnStyles: {
-        0: { cellWidth: 20},
-        1: { cellWidth: 110 },
-        2: { cellWidth: 20, halign: 'right' },
-        3: { cellWidth: 20, halign: 'right' },
+        0: { cellWidth: 30 },
+        1: { cellWidth: 120 },
+        2: { cellWidth: 25, halign: 'right' },
+        3: { cellWidth: 25, halign: 'right' },
       }
     });
 
-    // Cargar footer imagen
+    // Footer imagen (subida 10 unidades)
     const footerImg = new Image();
     footerImg.src = 'img/footer.png';
     await new Promise(res => {
@@ -258,9 +256,15 @@
       footerImg.onerror = res;
     });
     const footerHeight = (footerImg.height * pageWidth) / footerImg.width;
-    doc.addImage(footerImg, 'PNG', 10, 290 - footerHeight, pageWidth, footerHeight);
-    const clienteNombre = document.getElementById('cliente').value.trim().replace(/\s+/g, '_');
-    const fechaArchivo = document.getElementById('fecha').value.replace(/-/g, '');
+    doc.addImage(footerImg, 'PNG', 5, 280 - footerHeight, pageWidth, footerHeight);
+
+    // Texto fijo footer debajo de la imagen (bajado 5 unidades)
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Emitido por Adolfo Torales AT Servicios', 105, 285, { align: 'center' });
+
+    const clienteNombre = cliente.trim().replace(/\s+/g, '_');
+    const fechaArchivo = fecha.replace(/-/g, '');
     const nombreArchivo = `Presupuesto_ATS_${clienteNombre}_${fechaArchivo}.pdf`;
     doc.save(nombreArchivo);
   }
