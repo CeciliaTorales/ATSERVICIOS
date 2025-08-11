@@ -11,6 +11,10 @@
     max-width: 800px;
     padding: 0 10px;
   }
+  table.modern-table thead th {
+  background-color: #003366;
+  color: white;
+}
   h1 { text-align: center; }
   label { display: block; margin-top: 10px; }
   input, textarea { width: 100%; padding: 5px; margin-top: 5px; }
@@ -226,19 +230,23 @@
     // Dibujar tabla con autoTable
     doc.autoTable({
       startY: startY + 35,
-      head: [['Cantidad', 'Trabajo a realizar', 'Precio unitario', 'Total']],
+      head: [['Cant.', 'Trabajo a realizar', 'Precio unitario', 'Total']],
       body: rows,
       styles: { fontSize: 12 },
-      headStyles: { fillColor: [0, 123, 255] },
+       headStyles: {
+        fillColor: [0, 51, 102], // Azul oscuro en formato RGB
+        textColor: 255,          // Blanco
+        halign: 'center'
+      },
       foot: [['', '', 'Total Final:', totalFinal]],
       footStyles: { fillColor: [255, 204, 128], fontStyle: 'bold' },
       theme: 'grid',
       margin: { left: 10, right: 10 },
       columnStyles: {
-        0: { cellWidth: 10},
+        0: { cellWidth: 20},
         1: { cellWidth: 110 },
-        2: { cellWidth: 10, halign: 'right' },
-        3: { cellWidth: 10, halign: 'right' },
+        2: { cellWidth: 20, halign: 'right' },
+        3: { cellWidth: 20, halign: 'right' },
       }
     });
 
