@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Presupuesto</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px auto;
+    max-width: 800px;
+    padding: 0 10px;
+  }
+  h1 { text-align: center; }
+  label { display: block; margin-top: 10px; }
+  input, textarea { width: 100%; padding: 5px; margin-top: 5px; }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    margin-top: 15px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  thead tr {
+    background-color: #007BFF;
+    color: white;
+    text-align: left;
+    font-weight: 600;
+    border-radius: 8px;
+  }
+  thead th {
+    padding: 12px 15px;
+  }
+  tbody tr {
+    background-color: #f9f9f9;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+  }
+  tbody tr:hover {
+    background-color: #e6f0ff;
+  }
+  tbody td {
+    padding: 12px 15px;
+    border-bottom: none;
+  }
+  tfoot td {
+    font-weight: 700;
+    font-size: 1.1em;
+    background-color: #ffe0b2;
+    padding: 12px 15px;
+    text-align: right !important;
+    border-radius: 0 0 8px 8px;
+  }
+  #totalFinal {
+    background-color: #ffcc80;
+    text-align: right !important;
+  }
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #headerImg, #footerImg {
+    display: block;
+    margin: 0 auto 10px auto;
+    max-width: 100%;
+    height: auto;
+    width: 100%;
+  }
+</style>
+
+<!-- jsPDF y jsPDF-AutoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+</head>
+<body>
+
+<img src="img/header.png" alt="Header" id="headerImg" />
+
+
+
+<form id="presupuestoForm">
+  <label>Cliente:
+    <input type="text" id="cliente" required />
+  </label>
+
+  <label>Teléfono:
+    <input type="text" id="telefono" />
+  </label>
+
+  <label>Dirección:
+    <textarea id="direccion" rows="2"></textarea>
+  </label>
+
+  <label>Fecha:
+    <input type="date" id="fecha" required />
+  </label>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Cantidad</th>
+        <th>Trabajo a realizar</th>
+        <th>Precio unitario</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody id="trabajosBody"></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3" style="text-align:right">Total Final:</td>
+        <td id="totalFinal">$0</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <button type="button" onclick="generarPDF()">Descargar PDF</button>
+</form>
+
+<img src="img/footer.png" alt="Footer" id="footerImg" />
+
+<script>
+  const trabajosBody = document.getElementById('trabajosBody');
+  const totalFinalEl = document.getElementById('totalFinal');
+
+  function formatoNumero(n) {
+    return n.toLocaleString('es-AR', {maximumFractionDigits: 0});
+  }
+
+  for(let i=0; i<10; i++) {
+    const tr = document.createElement('tr');
+
+    const tdCantidad = document.createElement('td');
+    const inputCantidad = document.createElement('input');
+    inputCantidad.type = 'number';
+    inputCantidad.min = 0;
+    inputCantidad.value = 0;
+    inputCantidad.style.width = '60px';
+    inputCantidad.oninput = calcularTotales;
+    tdCantidad.appendChild(inputCantidad);
+
+    const tdTrabajo = document.createElement('td');
+    const inputTrabajo = document.createElement('input');
+    inputTrabajo.type = 'text';
+    tdTrabajo.appendChild(inputTrabajo);
+
+    const tdPrecio = document.createElement('td');
+    const inputPrecio = document.createElement('input');
+    inputPrecio.type = 'number';
+    inputPrecio.min = 0;
+    inputPrecio.step = '1';
+    inputPrecio.value = 0;
+    inputPrecio.style.width = '80px';
+    inputPrecio.oninput = calcularTotales;
+    tdPrecio.appendChild(inputPrecio);
+
+    const tdTotal = document.createElement('td');
+    tdTotal.textContent = '$0';
+
+    tr.appendChild(tdCantidad);
+    tr.appendChild(tdTrabajo);
+    tr.appendChild(tdPrecio);
+    tr.appendChild(tdTotal);
+
+    trabajosBody.appendChild(tr);
+  }
+
+  function calcularTotales() {
+    let totalFinal = 0;
+    for(let tr of trabajosBody.children) {
+      const cantidad = parseInt(tr.children[0].children[0].value) || 0;
+      const precio = parseInt(tr.children[2].children[0].value) || 0;
+      const total = cantidad * precio;
+      tr.children[3].textContent = '$' + formatoNumero(total);
+      totalFinal += total;
+    }
+    totalFinalEl.textContent = '$' + formatoNumero(totalFinal);
+  }
+
+  document.getElementById('fecha').valueAsDate = new Date();
+
+  async function generarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const pageWidth = 190;
+
+    // Cargar imágenes header y footer
+    const headerImg = new Image();
+    headerImg.src = 'img/header.png';
+    await new Promise(res => {
+      headerImg.onload = res;
+      headerImg.onerror = res;
+    });
+    const headerHeight = (headerImg.height * pageWidth) / headerImg.width;
+    doc.addImage(headerImg, 'PNG', 10, 5, pageWidth, headerHeight);
+
+    const cliente = document.getElementById('cliente').value;
+    const telefono = document.getElementById('telefono').value;
+    const direccion = document.getElementById('direccion').value;
+    const fecha = document.getElementById('fecha').value;
+    const totalFinal = totalFinalEl.textContent;
+
+    const startY = 5 + headerHeight + 10;
+    doc.setFontSize(14);
+    doc.text(`Cliente: ${cliente}`, 14, startY);
+    doc.text(`Teléfono: ${telefono}`, 14, startY + 8);
+    doc.text(`Dirección: ${direccion}`, 14, startY + 16);
+    doc.text(`Fecha: ${fecha}`, 14, startY + 24);
+
+    // Preparar datos para autoTable
+    const rows = [];
+    for(let tr of trabajosBody.children) {
+      const cantidad = tr.children[0].children[0].value || '';
+      const trabajo = tr.children[1].children[0].value || '';
+      const precio = tr.children[2].children[0].value || '';
+      const total = tr.children[3].textContent || '';
+
+      if(cantidad || trabajo || precio) {
+        rows.push([cantidad, trabajo, `$${formatoNumero(parseInt(precio) || 0)}`, total]);
+      }
+    }
+
+    // Dibujar tabla con autoTable
+    doc.autoTable({
+      startY: startY + 35,
+      head: [['Cantidad', 'Trabajo a realizar', 'Precio unitario', 'Total']],
+      body: rows,
+      styles: { fontSize: 12 },
+      headStyles: { fillColor: [0, 123, 255] },
+      foot: [['', '', 'Total Final:', totalFinal]],
+      footStyles: { fillColor: [255, 204, 128], fontStyle: 'bold' },
+      theme: 'grid',
+      margin: { left: 10, right: 10 },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 40, halign: 'right' },
+        3: { cellWidth: 40, halign: 'right' },
+      }
+    });
+
+    // Cargar footer imagen
+    const footerImg = new Image();
+    footerImg.src = 'img/footer.png';
+    await new Promise(res => {
+      footerImg.onload = res;
+      footerImg.onerror = res;
+    });
+    const footerHeight = (footerImg.height * pageWidth) / footerImg.width;
+    doc.addImage(footerImg, 'PNG', 10, 290 - footerHeight, pageWidth, footerHeight);
+    const clienteNombre = document.getElementById('cliente').value.trim().replace(/\s+/g, '_');
+    const fechaArchivo = document.getElementById('fecha').value.replace(/-/g, '');
+    const nombreArchivo = `Presupuesto_ATS_${clienteNombre}_${fechaArchivo}.pdf`;
+    doc.save(nombreArchivo);
+  }
+</script>
+
+</body>
+</html>
